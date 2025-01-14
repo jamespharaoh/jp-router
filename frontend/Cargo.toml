@@ -1,0 +1,24 @@
+[package]
+
+	name = "jp-router-frontend"
+	version = "0.1.0"
+	edition = "2021"
+
+[dependencies]
+
+	chrono = "*"
+	gloo = "*"
+	gloo-net = "*"
+	log = "*"
+	serde = { version = "*", features = [ "derive" ] }
+	serde_json = { version = "*" }
+	wasm-bindgen-futures = "*"
+	wasm-logger = "*"
+	yew = { version = "*", features = [ "csr" ] }
+	#yew = { git = "https://github.com/yewstack/yew/", features = [ "csr" ] }
+	yew-hooks = "*"
+	#{ git = "https://github.com/yewstack/yew/", features = [ "csr" ] }
+	yew-router = { version = "*" }
+	#yew-router = { git = "https://github.com/yewstack/yew.git" }
+
+	jp-router-common = { path = "../common" }

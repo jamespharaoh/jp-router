@@ -1,0 +1,20 @@
+[package]
+
+	name = "jp-router-backend"
+	version = "0.1.0"
+	edition = "2021"
+
+[dependencies]
+
+	anyhow = "*"
+	axum = { version = "*", features = [ "json" ] }
+	chrono = "*"
+	http = "*"
+	rust-embed = "*"
+	serde = { version = "*", features = [ "derive" ] }
+	thiserror = "*"
+	tokio = { version = "*", features = [ "macros", "net", "rt-multi-thread" ] }
+	tower = "*"
+	tower-http = { version = "*", features = [ "cors" ] }
+
+	jp-router-common = { path = "../common" }

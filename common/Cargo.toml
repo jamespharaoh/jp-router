@@ -1,0 +1,11 @@
+[package]
+
+	name = "jp-router-common"
+	version = "0.1.0"
+	edition = "2021"
+
+[dependencies]
+
+	chrono = { version = "*", features = [ "serde" ] }
+	mac_address = { version = "*", features = [ "serde" ] }
+	serde = { version = "*", features = [ "derive" ] }
