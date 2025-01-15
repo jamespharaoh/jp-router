@@ -53,7 +53,7 @@ fn get_dhcp_leases_sync () -> anyhow::Result <Vec <DhcpLease>> {
 		anyhow::ensure! (parts.len () == 5);
 		leases.push (DhcpLease {
 			expiry_time: Utc.timestamp_opt (parts [0].parse () ?, 0).single (),
-			mac_address: parts [1].parse () ?,
+			mac_address: parts [1].to_owned (),
 			ip_address: parts [2].parse () ?,
 			hostname: (parts [3] != "*").then (|| parts [3].to_owned ()),
 			client_id: (parts [4] != "*").then (|| parts [4].to_owned ()),

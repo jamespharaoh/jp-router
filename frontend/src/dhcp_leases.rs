@@ -35,7 +35,7 @@ pub fn dhcp_leases () -> Html {
 					<tbody> {
 						leases.iter ()
 							.map (|lease| html! {
-								<tr>
+								<tr key={ lease.ip_address.to_string () }>
 									<td>{
 										lease.expiry_time
 											.map (|val| DateTime::<Local>::from (val)

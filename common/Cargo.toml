@@ -7,5 +7,4 @@
 [dependencies]
 
 	chrono = { version = "*", features = [ "serde" ] }
-	mac_address = { version = "*", features = [ "serde" ] }
 	serde = { version = "*", features = [ "derive" ] }
