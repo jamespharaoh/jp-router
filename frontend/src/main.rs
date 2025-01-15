@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use chrono::DateTime;
 use chrono::Local;
 

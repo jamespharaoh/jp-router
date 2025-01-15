@@ -6,5 +6,6 @@
 
 [dependencies]
 
+	arcstr = { version = "*", features = [ "serde" ] }
 	chrono = { version = "*", features = [ "serde" ] }
 	serde = { version = "*", features = [ "derive" ] }

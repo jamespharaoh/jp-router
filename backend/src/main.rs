@@ -1,3 +1,7 @@
+use arcstr::ArcStr;
+
+use axum::Router;
+
 use axum::Json;
 use axum::body::Body;
 use axum::response::IntoResponse;
@@ -7,66 +11,92 @@ use axum::routing as r;
 use chrono::TimeZone;
 use chrono::Utc;
 
+use google_cloud_token::TokenSourceProvider as _;
+
+use http::status::StatusCode as HttpStatus;
+
+use serde::Deserialize;
+use serde::Serialize;
+
 use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
+use std::sync::Arc;
 
 use jp_router_common::*;
 
+mod acme_verify;
+mod config;
+mod dhcp_leases;
+mod google;
+
+use config::*;
+use google::*;
+
 #[ tokio::main ]
 async fn main () -> anyhow::Result <()> {
-    let app =
-    	axum::Router::new ()
-    		.route ("/dhcp-leases", r::get (dhcp_leases))
+
+	eprintln! ("Loading config");
+	let config = load_config ().await ?;
+
+	eprintln! ("Obtaining Google Cloud credentials");
+	let google_auth = GoogleAuth::build (& config).await ?;
+
+	eprintln! ("Starting web server on {}", config.core.listen);
+	let state = Arc::new (GlobalState {
+		config: config.clone (),
+		google_auth,
+		http: reqwest::Client::new (),
+	});
+	let app =
+		axum::Router::new ()
+			.nest ("/acme-verify", acme_verify::router ())
+			.nest ("/dhcp-leases", dhcp_leases::router ())
 			.layer (tower::ServiceBuilder::new ()
 				.layer (tower_http::cors::CorsLayer::new ()
 					.allow_methods ([ http::Method::GET, http::Method::POST ])
-					.allow_origin (tower_http::cors::Any)));
-    let listener =
-    	tokio::net::TcpListener::bind ("0.0.0.0:3000")
-    		.await.unwrap ();
-    axum::serve (listener, app).await.unwrap ();
-    Ok (())
+					.allow_origin (tower_http::cors::Any)))
+			.with_state (state.clone ());
+
+	let listener =
+		tokio::net::TcpListener::bind (& * state.config.core.listen)
+			.await.unwrap ();
+	axum::serve (listener, app).await ?;
+
+	Ok (())
+
 }
 
-async fn dhcp_leases () -> Result <Json <Vec <DhcpLease>>, ErrorResponse> {
-	Ok (Json (get_dhcp_leases ().await ?))
-}
-
-async fn get_dhcp_leases () -> anyhow::Result <Vec <DhcpLease>> {
-	tokio::task::spawn_blocking (get_dhcp_leases_sync).await ?
-}
-
-fn get_dhcp_leases_sync () -> anyhow::Result <Vec <DhcpLease>> {
-	let reader = BufReader::new (File::open ("/var/lib/misc/dnsmasq.leases") ?);
-	let mut leases = Vec::new ();
-	leases.push (DhcpLease {
-		expiry_time: None,
-		mac_address: "d6:f8:fc:49:c0:5d".parse () ?,
-		ip_address: "10.109.132.1".parse () ?,
-		hostname: Some ("router".to_owned ()),
-		client_id: None,
-	});
-	for line in reader.lines () {
-		let line = line ?;
-		let parts: Vec <& str> = line.split (' ').collect ();
-		anyhow::ensure! (parts.len () == 5);
-		leases.push (DhcpLease {
-			expiry_time: Utc.timestamp_opt (parts [0].parse () ?, 0).single (),
-			mac_address: parts [1].to_owned (),
-			ip_address: parts [2].parse () ?,
-			hostname: (parts [3] != "*").then (|| parts [3].to_owned ()),
-			client_id: (parts [4] != "*").then (|| parts [4].to_owned ()),
-		});
-	}
-	leases.sort_by_key (|lease| lease.ip_address);
-	Ok (leases)
+struct GlobalState {
+	config: Arc <Config>,
+	google_auth: GoogleAuth,
+	http: reqwest::Client,
 }
 
 #[ derive (Debug, thiserror::Error) ]
 enum ErrorResponse {
 	#[ error ("{0}") ]
 	Anyhow (#[ from ] anyhow::Error),
+	#[ error ("{1}") ]
+	Http (HttpStatus, anyhow::Error),
+}
+
+impl ErrorResponse {
+	fn forbidden (inner: anyhow::Error) -> Self {
+		Self::Http (HttpStatus::FORBIDDEN, inner)
+	}
+	fn internal (inner: anyhow::Error) -> Self {
+		Self::Http (HttpStatus::INTERNAL_SERVER_ERROR, inner)
+	}
+	fn unauthorized (inner: anyhow::Error) -> Self {
+		Self::Http (HttpStatus::UNAUTHORIZED, inner)
+	}
+}
+
+impl From <reqwest::Error> for ErrorResponse {
+	fn from (err: reqwest::Error) -> Self {
+		Self::from (anyhow::Error::from (err))
+	}
 }
 
 impl IntoResponse for ErrorResponse {
@@ -74,8 +104,28 @@ impl IntoResponse for ErrorResponse {
 		match self {
 			Self::Anyhow (err) =>
 				Response::builder ()
-					.body (Body::new (err.to_string ()))
-					.unwrap ()
+					.status (HttpStatus::INTERNAL_SERVER_ERROR)
+					.body (Body::new (format! ("{err}\n")))
+					.unwrap (),
+			Self::Http (status, err) =>
+				Response::builder ()
+					.status (status)
+					.body (Body::new (format! ("{err}\n")))
+					.unwrap (),
 		}
 	}
+}
+
+fn url_encode <'dat> (val: & 'dat str) -> percent_encoding::PercentEncode <'dat> {
+	percent_encoding::utf8_percent_encode (val, percent_encoding::NON_ALPHANUMERIC)
+}
+
+mod ex {
+	pub use axum::extract::Path;
+	pub use axum::extract::State;
+	pub use axum_extra::TypedHeader;
+	pub use headers::Authorization;
+	pub use headers::authorization::Basic;
+	pub type AuthBasic =
+		axum_extra::TypedHeader <headers::Authorization <headers::authorization::Basic>>;
 }

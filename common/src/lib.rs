@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use chrono::DateTime;
 use chrono::Utc;
 
@@ -7,10 +9,11 @@ use serde::Serialize;
 use std::net::IpAddr;
 
 #[ derive (Deserialize, Serialize) ]
+#[ serde (rename_all = "kebab-case") ]
 pub struct DhcpLease {
 	pub expiry_time: Option <DateTime <Utc>>,
-	pub mac_address: String,
+	pub mac_address: ArcStr,
 	pub ip_address: IpAddr,
-	pub hostname: Option <String>,
-	pub client_id: Option <String>,
+	pub hostname: Option <ArcStr>,
+	pub client_id: Option <ArcStr>,
 }

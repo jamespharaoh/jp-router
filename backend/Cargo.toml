@@ -7,11 +7,19 @@
 [dependencies]
 
 	anyhow = "*"
+	arcstr = { version = "*", features = [ "serde" ] }
 	axum = { version = "*", features = [ "json" ] }
+	axum-extra = { version = "*", features = [ "typed-header" ] }
 	chrono = "*"
+	google-cloud-auth = "*"
+	google-cloud-token = "*"
+	headers = "*"
 	http = "*"
+	percent-encoding = "*"
+	reqwest = "*"
 	rust-embed = "*"
-	serde = { version = "*", features = [ "derive" ] }
+	serde = { version = "*", features = [ "derive", "rc" ] }
+	serde_yaml = "*"
 	thiserror = "*"
 	tokio = { version = "*", features = [ "macros", "net", "rt-multi-thread" ] }
 	tower = "*"

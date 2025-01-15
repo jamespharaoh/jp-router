@@ -6,6 +6,8 @@
 
 [dependencies]
 
+	anyhow = "*"
+	arcstr = "*"
 	chrono = "*"
 	gloo = "*"
 	gloo-net = "*"
@@ -15,10 +17,7 @@
 	wasm-bindgen-futures = "*"
 	wasm-logger = "*"
 	yew = { version = "*", features = [ "csr" ] }
-	#yew = { git = "https://github.com/yewstack/yew/", features = [ "csr" ] }
 	yew-hooks = "*"
-	#{ git = "https://github.com/yewstack/yew/", features = [ "csr" ] }
 	yew-router = { version = "*" }
-	#yew-router = { git = "https://github.com/yewstack/yew.git" }
 
 	jp-router-common = { path = "../common" }

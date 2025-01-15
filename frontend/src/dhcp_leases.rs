@@ -2,22 +2,26 @@ use super::*;
 
 #[ function_component (DhcpLeases) ]
 pub fn dhcp_leases () -> Html {
-	fn update (leases: UseStateHandle <Vec <DhcpLease>>) {
-		wasm_bindgen_futures::spawn_local (async move {
-			let fetched_leases = fetch_leases ().await;
-			log::info! ("fetched {} leases", fetched_leases.len ());
-			leases.set (fetched_leases);
-		});
-	}
 	let leases = use_state (|| Vec::new ());
-	use_interval ({
+	let update = {
 		let leases = leases.clone ();
-		move || update (leases.clone ())
-	}, 5000);
-	use_effect_with ((), {
-		let leases = leases.clone ();
-		move |_| { update (leases) }
-	});
+		move || {
+			let leases = leases.clone ();
+			wasm_bindgen_futures::spawn_local (async move {
+				match fetch_leases ().await {
+					Ok (fetched_leases) => {
+						log::info! ("Fetched {} DHCP leases", fetched_leases.len ());
+						leases.set (fetched_leases);
+					},
+					Err (err) => {
+						log::error! ("Error fetching DHCP leases: {err}");
+					},
+				};
+			});
+		}
+	};
+	use_interval (update.clone (), 5000);
+	use_effect_with ((), move |_| update ());
 	html! {
 		<Template>
 			<section>
@@ -43,10 +47,10 @@ pub fn dhcp_leases () -> Html {
 												.to_string ())
 											.unwrap_or_default ()
 									}</td>
-									<td>{ & lease.mac_address }</td>
+									<td>{ lease.mac_address.as_str () }</td>
 									<td>{ lease.ip_address.to_string () }</td>
-									<td>{ lease.hostname.as_ref () }</td>
-									<td>{ lease.client_id.as_ref () }</td>
+									<td>{ lease.hostname.as_ref ().map (ArcStr::as_str) }</td>
+									<td>{ lease.client_id.as_ref ().map (ArcStr::as_str) }</td>
 								</tr>
 							})
 							.collect::<Html> ()
@@ -57,14 +61,10 @@ pub fn dhcp_leases () -> Html {
 	}
 }
 
-async fn fetch_leases () -> Vec <DhcpLease> {
-	// TODO handle errors
-	gloo_net::http::Request::get (
-			"http://router.arago136.es:3000/dhcp-leases")
-		.send ()
-		.await
-		.unwrap ()
-		.json ()
-		.await
-		.unwrap ()
+async fn fetch_leases () -> anyhow::Result <Vec <DhcpLease>> {
+	Ok (
+		gloo_net::http::Request::get ("http://router.arago136.es/api/dhcp-leases")
+			.send ().await ?
+			.json ().await ?
+	)
 }
