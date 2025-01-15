@@ -63,7 +63,7 @@ pub fn dhcp_leases () -> Html {
 
 async fn fetch_leases () -> anyhow::Result <Vec <DhcpLease>> {
 	Ok (
-		gloo_net::http::Request::get ("http://router.arago136.es/api/dhcp-leases")
+		gloo_net::http::Request::get ("https://router.arago136.es/api/dhcp-leases")
 			.send ().await ?
 			.json ().await ?
 	)
