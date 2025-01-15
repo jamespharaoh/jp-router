@@ -12,13 +12,14 @@ async fn put (
 	ex::Path (domain): ex::Path <ArcStr>,
 	value: String,
 ) -> Result <String, ErrorResponse> {
+	let domain = arcstr::format! ("_acme-challenge.{domain}");
 	let value = ArcStr::from (value);
 	auth_verify (& state, & auth, & domain).await ?;
 	if google_api::exists (& state, & domain).await ? {
 		google_api::delete (& state, & domain).await ?;
 	}
 	google_api::create (& state, & domain, & value).await ?;
-	Ok ("DNS record created".to_owned ())
+	Ok ("DNS record created\n".to_owned ())
 }
 
 async fn delete (
@@ -26,9 +27,10 @@ async fn delete (
 	ex::TypedHeader (ex::Authorization (auth)): ex::AuthBasic,
 	ex::Path (domain): ex::Path <ArcStr>,
 ) -> Result <String, ErrorResponse> {
+	let domain = arcstr::format! ("_acme-challenge.{domain}");
 	auth_verify (& state, & auth, & domain).await ?;
 	google_api::delete (& state, & domain).await ?;
-	Ok ("DNS record removed".to_owned ())
+	Ok ("DNS record removed\n".to_owned ())
 }
 
 async fn auth_verify (
