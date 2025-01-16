@@ -11,10 +11,16 @@
 	axum = { version = "*", features = [ "json" ] }
 	axum-extra = { version = "*", features = [ "typed-header" ] }
 	chrono = "*"
+	futures = "*"
 	google-cloud-auth = "*"
 	google-cloud-token = "*"
 	headers = "*"
 	http = "*"
+	itertools = "*"
+	libc = "*"
+	netlink-packet-core = "*"
+	netlink-packet-route = "*"
+	netlink-proto = "*"
 	percent-encoding = "*"
 	reqwest = "*"
 	rust-embed = "*"

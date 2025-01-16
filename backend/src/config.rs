@@ -37,7 +37,10 @@ pub struct AcmeUserConfig {
 #[ derive (Deserialize) ]
 #[ serde (deny_unknown_fields, rename_all = "kebab-case") ]
 pub struct CoreConfig {
+	pub lan_bridge_iface: ArcStr,
+	pub lan_iface: ArcStr,
 	pub listen: ArcStr,
+	pub wan_iface: ArcStr,
 }
 
 #[ derive (Deserialize) ]

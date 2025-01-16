@@ -16,6 +16,8 @@ pub fn template (props: & TemplateProps) -> Html {
 				<Link <Route> to={ Route::Home }>{ "Home" }</Link <Route>>
 				{ " | " }
 				<Link <Route> to={ Route::DhcpLeases }>{ "DHCP Leases" }</Link <Route>>
+				{ " | " }
+				<Link <Route> to={ Route::Interfaces }>{ "Network interfaces" }</Link <Route>>
 			</nav>
 			{ props.children.clone () }
 		</>

@@ -11,16 +11,22 @@ use axum::routing as r;
 use chrono::TimeZone;
 use chrono::Utc;
 
+use futures::prelude::*;
+
 use google_cloud_token::TokenSourceProvider as _;
 
 use http::status::StatusCode as HttpStatus;
 
+use itertools::Itertools;
+
 use serde::Deserialize;
 use serde::Serialize;
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
+use std::path::Path;
 use std::sync::Arc;
 
 use jp_router_common::*;
@@ -31,6 +37,7 @@ mod error;
 mod dhcp_leases;
 mod google;
 mod misc;
+mod networks;
 
 use config::*;
 use error::*;
@@ -56,6 +63,7 @@ async fn main () -> anyhow::Result <()> {
 		axum::Router::new ()
 			.nest ("/acme-verify", acme_verify::router ())
 			.nest ("/dhcp-leases", dhcp_leases::router ())
+			.nest ("/networks", networks::router ())
 			.layer (tower::ServiceBuilder::new ()
 				.layer (tower_http::cors::CorsLayer::new ()
 					.allow_methods ([ http::Method::GET, http::Method::POST ])
