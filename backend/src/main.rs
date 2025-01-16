@@ -27,11 +27,15 @@ use jp_router_common::*;
 
 mod acme_verify;
 mod config;
+mod error;
 mod dhcp_leases;
 mod google;
+mod misc;
 
 use config::*;
-use google::*;
+use error::*;
+use google::auth::GoogleAuth;
+use misc::*;
 
 #[ tokio::main ]
 async fn main () -> anyhow::Result <()> {
@@ -61,7 +65,10 @@ async fn main () -> anyhow::Result <()> {
 	let listener =
 		tokio::net::TcpListener::bind (& * state.config.core.listen)
 			.await.unwrap ();
-	axum::serve (listener, app).await ?;
+
+	axum::serve (listener, app)
+		.with_graceful_shutdown (shutdown_signal ())
+		.await ?;
 
 	Ok (())
 
@@ -73,59 +80,27 @@ struct GlobalState {
 	http: reqwest::Client,
 }
 
-#[ derive (Debug, thiserror::Error) ]
-enum ErrorResponse {
-	#[ error ("{0}") ]
-	Anyhow (#[ from ] anyhow::Error),
-	#[ error ("{1}") ]
-	Http (HttpStatus, anyhow::Error),
-}
+async fn shutdown_signal () {
 
-impl ErrorResponse {
-	fn forbidden (inner: anyhow::Error) -> Self {
-		Self::Http (HttpStatus::FORBIDDEN, inner)
-	}
-	fn internal (inner: anyhow::Error) -> Self {
-		Self::Http (HttpStatus::INTERNAL_SERVER_ERROR, inner)
-	}
-	fn unauthorized (inner: anyhow::Error) -> Self {
-		Self::Http (HttpStatus::UNAUTHORIZED, inner)
-	}
-}
+	let ctrl_c = async {
+		tokio::signal::ctrl_c()
+			.await
+			.expect ("failed to install Ctrl+C handler");
+		eprintln! ("Received INT signal, shutting down...");
+	};
 
-impl From <reqwest::Error> for ErrorResponse {
-	fn from (err: reqwest::Error) -> Self {
-		Self::from (anyhow::Error::from (err))
+	let terminate = async {
+		tokio::signal::unix::signal (
+				tokio::signal::unix::SignalKind::terminate ())
+			.expect ("failed to install signal handler")
+			.recv ()
+			.await;
+		eprintln! ("Received TERM signal, shutting down...");
+	};
+
+	tokio::select! {
+		_ = ctrl_c => {},
+		_ = terminate => {},
 	}
-}
 
-impl IntoResponse for ErrorResponse {
-	fn into_response (self) -> Response <Body> {
-		match self {
-			Self::Anyhow (err) =>
-				Response::builder ()
-					.status (HttpStatus::INTERNAL_SERVER_ERROR)
-					.body (Body::new (format! ("{err}\n")))
-					.unwrap (),
-			Self::Http (status, err) =>
-				Response::builder ()
-					.status (status)
-					.body (Body::new (format! ("{err}\n")))
-					.unwrap (),
-		}
-	}
-}
-
-fn url_encode <'dat> (val: & 'dat str) -> percent_encoding::PercentEncode <'dat> {
-	percent_encoding::utf8_percent_encode (val, percent_encoding::NON_ALPHANUMERIC)
-}
-
-mod ex {
-	pub use axum::extract::Path;
-	pub use axum::extract::State;
-	pub use axum_extra::TypedHeader;
-	pub use headers::Authorization;
-	pub use headers::authorization::Basic;
-	pub type AuthBasic =
-		axum_extra::TypedHeader <headers::Authorization <headers::authorization::Basic>>;
 }

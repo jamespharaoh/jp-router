@@ -19,9 +19,10 @@
 	reqwest = "*"
 	rust-embed = "*"
 	serde = { version = "*", features = [ "derive", "rc" ] }
+	serde_json = "*"
 	serde_yaml = "*"
 	thiserror = "*"
-	tokio = { version = "*", features = [ "macros", "net", "rt-multi-thread" ] }
+	tokio = { version = "*", features = [ "macros", "net", "rt-multi-thread", "signal" ] }
 	tower = "*"
 	tower-http = { version = "*", features = [ "cors" ] }
 
