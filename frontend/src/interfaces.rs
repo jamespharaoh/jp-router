@@ -23,9 +23,17 @@ pub fn interfaces () -> Html {
 	use_interval (update.clone (), 400);
 	use_effect_with ((), move |_| update ());
 	html! {
-		<Template>
+		<>
+			<Header/>
+			<Nav/>
 			<section>
-				<h2>{ "Network interfaces" }</h2>
+				<header>
+					<h1>{ "Network interfaces" }</h1>
+				</header>
+				<div class="help">
+					<p>{ "View configuration information, addresses, and real-time statistics \
+						for all network interfaces" }</p>
+				</div>
 				<table>
 					<thead>
 						<tr>
@@ -73,7 +81,7 @@ pub fn interfaces () -> Html {
 					} </tbody>
 				</table>
 			</section>
-		</Template>
+		</>
 	}
 }
 

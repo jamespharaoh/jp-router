@@ -12,13 +12,13 @@ use jp_router_common::*;
 mod dhcp_leases;
 mod home;
 mod interfaces;
-mod template;
+mod nav;
 mod route;
 
 use dhcp_leases::*;
 use home::*;
 use interfaces::*;
-use template::*;
+use nav::*;
 use route::*;
 
 fn main () {

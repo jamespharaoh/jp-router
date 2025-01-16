@@ -23,9 +23,16 @@ pub fn dhcp_leases () -> Html {
 	use_interval (update.clone (), 5000);
 	use_effect_with ((), move |_| update ());
 	html! {
-		<Template>
+		<>
+			<Header/>
+			<Nav/>
 			<section>
-				<h2>{ "DHCP leases" }</h2>
+				<header>
+					<h1>{ "DHCP leases" }</h1>
+				</header>
+				<div class="help">
+					<p>{ "View information about active DHCP leases given out by the router." }</p>
+				</div>
 				<table>
 					<thead>
 						<tr>
@@ -57,7 +64,7 @@ pub fn dhcp_leases () -> Html {
 					} </tbody>
 				</table>
 			</section>
-		</Template>
+		</>
 	}
 }
 
