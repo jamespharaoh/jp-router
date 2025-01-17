@@ -44,7 +44,7 @@ pub struct NetworkInterface {
 	pub tx_packets: u64,
 }
 
-#[ derive (Clone, Copy, Debug, Deserialize, Serialize) ]
+#[ derive (Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize) ]
 #[ serde (rename_all = "kebab-case") ]
 pub enum NetworkInterfaceOperState {
 	Unknown,
@@ -87,7 +87,7 @@ pub struct NetworkAddress {
 	pub prefix_len: u8,
 }
 
-#[ derive (Clone, Debug, Deserialize, Serialize) ]
+#[ derive (Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize) ]
 #[ serde (rename_all = "kebab-case") ]
 pub enum NetworkAddressScope {
 	Universe,

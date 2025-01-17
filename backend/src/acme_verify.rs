@@ -23,17 +23,17 @@ async fn put (
 		name: arcstr::format! ("{domain}."),
 		type_: arcstr::literal! ("TXT"),
 	};
-	if let Some (mut rrset) = rrset_id.get (& state.http, & state.google_auth).await ? {
+	if let Some (mut rrset) = rrset_id.get (& state).await ? {
 		rrset.ttl = 60;
 		rrset.rrdatas = vec! [ value.into () ];
-		rrset.update (& state.http, & state.google_auth).await ?;
+		rrset.update (& state).await ?;
 		Ok ("DNS record updated\n".to_owned ())
 	} else {
 		dns::ResourceRecordSet {
 			id: rrset_id,
 			ttl: 60,
 			rrdatas: vec! [ value.into () ],
-		}.create (& state.http, & state.google_auth).await ?;
+		}.create (& state).await ?;
 		Ok ("DNS record created\n".to_owned ())
 	}
 }
@@ -51,8 +51,8 @@ async fn delete (
 		name: arcstr::format! ("{domain}."),
 		type_: arcstr::literal! ("TXT"),
 	};
-	if let Some (rrset) = rrset_id.get (& state.http, & state.google_auth).await ? {
-		rrset.delete (& state.http, & state.google_auth).await ?;
+	if let Some (rrset) = rrset_id.get (& state).await ? {
+		rrset.delete (& state).await ?;
 	}
 	Ok ("DNS record removed\n".to_owned ())
 }

@@ -24,7 +24,7 @@ async fn get () -> Result <Json <Vec <NetworkInterface>>, ErrorResponse> {
 	Ok (Json (fetch ().await ?))
 }
 
-async fn fetch () -> anyhow::Result <Vec <NetworkInterface>> {
+pub async fn fetch () -> anyhow::Result <Vec <NetworkInterface>> {
 	let mut ifaces = Vec::new ();
 	let (nl_conn, nl_handle, _nl_messages) =
 		netlink_proto::new_connection (

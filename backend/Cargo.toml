@@ -17,11 +17,12 @@
 	headers = "*"
 	http = "*"
 	itertools = "*"
-	libc = "*"
+	log = "*"
 	netlink-packet-core = "*"
 	netlink-packet-route = "*"
 	netlink-proto = "*"
 	percent-encoding = "*"
+	pretty_env_logger = "*"
 	reqwest = "*"
 	rust-embed = "*"
 	serde = { version = "*", features = [ "derive", "rc" ] }

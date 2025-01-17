@@ -26,8 +26,10 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead as _;
 use std::io::BufReader;
+use std::net::IpAddr;
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration as StdDuration;
 
 use jp_router_common::*;
 
@@ -35,6 +37,7 @@ mod acme_verify;
 mod config;
 mod error;
 mod dhcp_leases;
+mod dynamic_dns;
 mod google;
 mod misc;
 mod networks;
@@ -47,13 +50,15 @@ use misc::*;
 #[ tokio::main ]
 async fn main () -> anyhow::Result <()> {
 
-	eprintln! ("Loading config");
+	pretty_env_logger::init ();
+
+	log::info! ("Loading config");
 	let config = load_config ().await ?;
 
-	eprintln! ("Obtaining Google Cloud credentials");
+	log::info! ("Obtaining Google Cloud credentials");
 	let google_auth = GoogleAuth::build (& config).await ?;
 
-	eprintln! ("Starting web server on {}", config.core.listen);
+	log::info! ("Starting web server on {}", config.core.listen);
 	let state = Arc::new (GlobalState {
 		config: config.clone (),
 		google_auth,
@@ -69,6 +74,11 @@ async fn main () -> anyhow::Result <()> {
 					.allow_methods ([ http::Method::GET, http::Method::POST ])
 					.allow_origin (tower_http::cors::Any)))
 			.with_state (state.clone ());
+
+	tokio::spawn ({
+		let state = state.clone ();
+		async move { dynamic_dns::run (& state).await }
+	});
 
 	let listener =
 		tokio::net::TcpListener::bind (& * state.config.core.listen)
@@ -94,7 +104,7 @@ async fn shutdown_signal () {
 		tokio::signal::ctrl_c()
 			.await
 			.expect ("failed to install Ctrl+C handler");
-		eprintln! ("Received INT signal, shutting down...");
+		log::info! ("Received INT signal, shutting down...");
 	};
 
 	let terminate = async {
@@ -103,7 +113,7 @@ async fn shutdown_signal () {
 			.expect ("failed to install signal handler")
 			.recv ()
 			.await;
-		eprintln! ("Received TERM signal, shutting down...");
+		log::info! ("Received TERM signal, shutting down...");
 	};
 
 	tokio::select! {

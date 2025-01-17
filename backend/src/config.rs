@@ -15,6 +15,7 @@ fn load_config_sync () -> anyhow::Result <Arc <Config>> {
 pub struct Config {
 	pub acme: Arc <AcmeConfig>,
 	pub core: Arc <CoreConfig>,
+	pub dynamic_dns: Arc <DynamicDnsConfig>,
 	pub google_cloud: Arc <GoogleCloudConfig>,
 }
 
@@ -41,6 +42,15 @@ pub struct CoreConfig {
 	pub lan_iface: ArcStr,
 	pub listen: ArcStr,
 	pub wan_iface: ArcStr,
+}
+
+#[ derive (Deserialize) ]
+#[ serde (deny_unknown_fields, rename_all = "kebab-case") ]
+pub struct DynamicDnsConfig {
+	pub cloud_zone: ArcStr,
+	pub domain: ArcStr,
+	pub enabled: bool,
+	pub interval_secs: u64,
 }
 
 #[ derive (Deserialize) ]

@@ -3,7 +3,9 @@ use super::*;
 #[ derive (Clone, Debug, Default, Deserialize, Serialize) ]
 #[ serde (rename_all = "camelCase") ]
 pub struct ResourceRecordSetId {
+	#[ serde (skip) ]
 	pub project: ArcStr,
+	#[ serde (skip) ]
 	pub zone: ArcStr,
 	pub name: ArcStr,
 	pub type_: ArcStr,
@@ -29,12 +31,11 @@ impl ResourceRecordSetId {
 
 	pub async fn get (
 		& self,
-		http: & reqwest::Client,
-		auth: & GoogleAuth,
+		state: & GlobalState,
 	) -> anyhow::Result <Option <ResourceRecordSet>> {
 		let req_url = self.url ();
-		let resp = http.get (& * req_url)
-			.header ("authorization", auth.token ().await ?.to_string ())
+		let resp = state.http.get (& * req_url)
+			.header ("authorization", state.google_auth.token ().await ?.to_string ())
 			.send ().await ?;
 		match resp.status () {
 			HttpStatus::OK => {
@@ -43,7 +44,10 @@ impl ResourceRecordSetId {
 				Ok (Some (resp_body))
 			},
 			HttpStatus::NOT_FOUND => Ok (None),
-			status => Err (anyhow::format_err! ("Error getting {req_url}: {status}")),
+			status => {
+				let resp_body = resp.text ().await ?;
+				Err (anyhow::format_err! ("Error getting {req_url}: {status}: {resp_body}"))
+			},
 		}
 	}
 
@@ -52,7 +56,7 @@ impl ResourceRecordSetId {
 #[ derive (Debug, Default, Deserialize, Serialize) ]
 #[ serde (rename_all = "camelCase") ]
 pub struct ResourceRecordSet {
-	#[ serde (skip) ]
+	#[ serde (flatten) ]
 	pub id: ResourceRecordSetId,
 	pub ttl: u64,
 	pub rrdatas: Vec <ArcStr>,
@@ -62,50 +66,56 @@ impl ResourceRecordSet {
 
 	pub async fn create (
 		& self,
-		http: & reqwest::Client,
-		auth: & GoogleAuth,
+		state: & GlobalState,
 	) -> anyhow::Result <()> {
 		let req_url = self.id.parent_url ();
-		let resp = http.post (& * req_url)
-			.header ("authorization", auth.token ().await ?.to_string ())
+		let resp = state.http.post (& * req_url)
+			.header ("authorization", state.google_auth.token ().await ?.to_string ())
 			.json (self)
 			.send ().await ?;
 		match resp.status () {
 			HttpStatus::OK => Ok (()),
-			status => Err (anyhow::format_err! ("Error creating {req_url}: {status}")),
+			status => {
+				let resp_body = resp.text ().await ?;
+				Err (anyhow::format_err! ("Error posting {req_url}: {status}: {resp_body}"))
+			},
 		}
 	}
 
 	pub async fn update (
 		& self,
-		http: & reqwest::Client,
-		auth: & GoogleAuth,
+		state: & GlobalState,
 	) -> anyhow::Result <()> {
 		let req_url = self.id.url ();
-		let resp = http.patch (& * req_url)
-			.header ("authorization", auth.token ().await ?.to_string ())
+		let resp = state.http.patch (& * req_url)
+			.header ("authorization", state.google_auth.token ().await ?.to_string ())
 			.json (self)
 			.send ().await ?;
 		match resp.status () {
 			HttpStatus::OK => Ok (()),
 			HttpStatus::NOT_FOUND => Ok (()),
-			status => Err (anyhow::format_err! ("Error deleting {req_url}: {status}")),
+			status => {
+				let resp_body = resp.text ().await ?;
+				Err (anyhow::format_err! ("Error patching {req_url}: {status}: {resp_body}"))
+			},
 		}
 	}
 
 	pub async fn delete (
 		& self,
-		http: & reqwest::Client,
-		auth: & GoogleAuth,
+		state: & GlobalState,
 	) -> anyhow::Result <()> {
 		let req_url = self.id.url ();
-		let resp = http.delete (& * req_url)
-			.header ("authorization", auth.token ().await ?.to_string ())
+		let resp = state.http.delete (& * req_url)
+			.header ("authorization", state.google_auth.token ().await ?.to_string ())
 			.send ().await ?;
 		match resp.status () {
 			HttpStatus::OK => Ok (()),
 			HttpStatus::NOT_FOUND => Ok (()),
-			status => Err (anyhow::format_err! ("Error deleting {req_url}: {status}")),
+			status => {
+				let resp_body = resp.text ().await ?;
+				Err (anyhow::format_err! ("Error deleting {req_url}: {status}: {resp_body}"))
+			},
 		}
 	}
 
