@@ -50,7 +50,14 @@ use misc::*;
 #[ tokio::main ]
 async fn main () -> anyhow::Result <()> {
 
-	pretty_env_logger::init ();
+	if systemd_journal_logger::connected_to_journal () {
+		systemd_journal_logger::JournalLog::new ()
+			.unwrap ()
+			.install () ?;
+		log::set_max_level (log::LevelFilter::Info);
+	} else {
+		pretty_env_logger::init ();
+	}
 
 	log::info! ("Loading config");
 	let config = load_config ().await ?;
@@ -58,12 +65,12 @@ async fn main () -> anyhow::Result <()> {
 	log::info! ("Obtaining Google Cloud credentials");
 	let google_auth = GoogleAuth::build (& config).await ?;
 
-	log::info! ("Starting web server on {}", config.core.listen);
 	let state = Arc::new (GlobalState {
 		config: config.clone (),
 		google_auth,
 		http: reqwest::Client::new (),
 	});
+
 	let app =
 		axum::Router::new ()
 			.nest ("/acme-verify", acme_verify::router ())
@@ -80,6 +87,7 @@ async fn main () -> anyhow::Result <()> {
 		async move { dynamic_dns::run (& state).await }
 	});
 
+	log::info! ("Starting web server on {}", config.core.listen);
 	let listener =
 		tokio::net::TcpListener::bind (& * state.config.core.listen)
 			.await.unwrap ();

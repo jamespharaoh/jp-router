@@ -1468,6 +1468,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_yaml",
+ "systemd-journal-logger",
  "thiserror 2.0.11",
  "tokio",
  "tower",
@@ -2470,6 +2471,16 @@ checksum = "8e1d1b10ced5ca923a1fcb8d03e96b8d3268065d724548c0211415ff6ac6bac4"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "systemd-journal-logger"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c18918ae65f3d828ec9ab7f4714b8c564149045f47407e319dd25cadfaf9d0cf"
+dependencies = [
+ "log",
+ "rustix",
 ]
 
 [[package]]

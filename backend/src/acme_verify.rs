@@ -17,6 +17,7 @@ async fn put (
 	let domain = arcstr::format! ("_acme-challenge.{domain}");
 	let value = ArcStr::from (value);
 	auth_verify (& state, & auth, & domain).await ?;
+	log::info! ("Creating {domain}");
 	let rrset_id = dns::ResourceRecordSetId {
 		project: state.config.google_cloud.project_id.clone (),
 		zone: state.config.acme.cloud_zone.clone (),
@@ -45,6 +46,7 @@ async fn delete (
 ) -> Result <String, ErrorResponse> {
 	let domain = arcstr::format! ("_acme-challenge.{domain}");
 	auth_verify (& state, & auth, & domain).await ?;
+	log::info! ("Deleting {domain}");
 	let rrset_id = dns::ResourceRecordSetId {
 		project: state.config.google_cloud.project_id.clone (),
 		zone: state.config.acme.cloud_zone.clone (),
@@ -67,6 +69,7 @@ async fn auth_verify (
 			.find (|user| user.name == auth.username ())
 			.ok_or_else (|| ErrorResponse::unauthorized (anyhow::format_err! ("Auth failed"))) ?;
 	if user.secret != auth.password () {
+		log::warn! ("Invalid password for user {}", auth.username ());
 		return Err (ErrorResponse::unauthorized (anyhow::format_err! ("Auth failed")))
 	}
 	let full_subdomain = domain
@@ -75,6 +78,7 @@ async fn auth_verify (
 	let main_subdomain = full_subdomain.rsplit ('.').next ().unwrap ().to_string ();
 	if ! user.subdomains.iter ()
 			.any (|subdomain| & * subdomain == & * main_subdomain) {
+		log::warn! ("Access denied for user {}", auth.username ());
 		return Err (ErrorResponse::forbidden (anyhow::format_err! ("Access denied")));
 	}
 	Ok (())

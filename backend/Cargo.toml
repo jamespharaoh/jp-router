@@ -28,6 +28,7 @@
 	serde = { version = "*", features = [ "derive", "rc" ] }
 	serde_json = "*"
 	serde_yaml = "*"
+	systemd-journal-logger = "*"
 	thiserror = "*"
 	tokio = { version = "*", features = [ "macros", "net", "rt-multi-thread", "signal" ] }
 	tower = "*"

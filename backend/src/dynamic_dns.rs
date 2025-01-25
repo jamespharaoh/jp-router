@@ -36,7 +36,6 @@ async fn run_once (state: & GlobalState) -> anyhow::Result <()> {
 		log::warn! ("WAN interface has no public address");
 		return Ok (())
 	};
-	log::info! ("Found WAN IP address: {wan_addr}");
 	let rrset_id = dns::ResourceRecordSetId {
 		project: state.config.google_cloud.project_id.clone (),
 		zone: state.config.dynamic_dns.cloud_zone.clone (),
@@ -44,10 +43,12 @@ async fn run_once (state: & GlobalState) -> anyhow::Result <()> {
 		type_: arcstr::literal! ("A"),
 	};
 	if let Some (mut rrset) = rrset_id.get (& state).await ? {
-		rrset.ttl = 60;
-		rrset.rrdatas = vec! [ arcstr::format! ("{wan_addr}") ];
-		rrset.update (& state).await ?;
-		log::info! ("DNS record updated");
+		if rrset.ttl != 60 && rrset.rrdatas != & [ arcstr::format! ("{wan_addr}") ] {
+			rrset.ttl = 60;
+			rrset.rrdatas = vec! [ arcstr::format! ("{wan_addr}") ];
+			rrset.update (& state).await ?;
+			log::info! ("DNS record updated to {wan_addr}");
+		}
 	} else {
 		let rrset = dns::ResourceRecordSet {
 			id: rrset_id,
@@ -55,7 +56,7 @@ async fn run_once (state: & GlobalState) -> anyhow::Result <()> {
 			rrdatas: vec! [ arcstr::format! ("{wan_addr}") ],
 		};
 		rrset.create (& state).await ?;
-		log::info! ("DNS record created");
+		log::info! ("DNS record created for {wan_addr}");
 	}
 	Ok (())
 }
