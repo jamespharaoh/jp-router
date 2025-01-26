@@ -1,0 +1,2 @@
+#!/bin/bash -e
+nano Cargo.toml $(find src -type f | sort) config.yaml
