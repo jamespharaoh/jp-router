@@ -49,6 +49,7 @@ pub struct CoreConfig {
 pub struct DynamicDnsConfig {
 	pub cloud_zone: ArcStr,
 	pub domain: ArcStr,
+	pub internal_domain: ArcStr,
 	pub enabled: bool,
 	pub interval_secs: u64,
 }

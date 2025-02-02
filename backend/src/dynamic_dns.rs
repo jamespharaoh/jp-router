@@ -2,7 +2,7 @@ use super::*;
 
 use google::dns;
 
-pub async fn run (state: & GlobalState) {
+pub async fn run (state: & Arc <GlobalState>) {
 	if ! state.config.dynamic_dns.enabled { return }
 	log::info! ("Started");
 	let mut interval = tokio::time::interval (
@@ -17,7 +17,7 @@ pub async fn run (state: & GlobalState) {
 	}
 }
 
-async fn run_once (state: & GlobalState) -> anyhow::Result <()> {
+async fn run_once (state: & Arc <GlobalState>) -> anyhow::Result <()> {
 	let networks = networks::fetch ().await ?;
 	let Some (wan_iface) = networks.iter ()
 				.find (|net| net.name == state.config.core.wan_iface)
@@ -35,9 +35,26 @@ async fn run_once (state: & GlobalState) -> anyhow::Result <()> {
 				.next ()
 			else {
 		log::warn! ("WAN interface has no public address");
+		tokio::task::spawn_blocking (|| {
+			fs::write ("var/dynamic-dns-hosts", b"") ?;
+			anyhow::Ok (())
+		}).await ? ?;
 		return Ok (())
 	};
 	log::debug! ("WAN IP is {wan_addr}");
+	tokio::task::spawn_blocking ({
+		let state = Arc::clone (state);
+		move || {
+			let mut hosts = String::new ();
+			writeln! (
+					& mut hosts,
+					"{wan_addr} {internal_domain}",
+					internal_domain = state.config.dynamic_dns.internal_domain)
+				.unwrap ();
+			fs::write ("var/dynamic-dns-hosts", hosts.as_bytes ()) ?;
+			anyhow::Ok (())
+		}
+	}).await ? ?;
 	let rrset_id = dns::ResourceRecordSetId {
 		project: state.config.google_cloud.project_id.clone (),
 		zone: state.config.dynamic_dns.cloud_zone.clone (),
