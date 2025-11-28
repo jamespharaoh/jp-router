@@ -13,7 +13,7 @@ use chrono::Utc;
 
 use futures::prelude::*;
 
-use google_cloud_token::TokenSourceProvider as _;
+use token_source::TokenSourceProvider as _;
 
 use http::status::StatusCode as HttpStatus;
 

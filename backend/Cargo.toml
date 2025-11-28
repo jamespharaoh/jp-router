@@ -12,8 +12,10 @@
 	axum-extra = { version = "*", features = [ "typed-header" ] }
 	chrono = "*"
 	futures = "*"
-	google-cloud-auth = "*"
-	google-cloud-token = "*"
+	#google-cloud-auth = "*"
+	gcloud-auth = "*"
+	#google-cloud-token = "*"
+	token-source = "*"
 	headers = "*"
 	http = "*"
 	itertools = "*"
