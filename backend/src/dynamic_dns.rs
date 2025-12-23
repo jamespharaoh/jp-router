@@ -55,30 +55,32 @@ async fn run_once (state: & Arc <GlobalState>) -> anyhow::Result <()> {
 			anyhow::Ok (())
 		}
 	}).await ? ?;
-	let rrset_id = dns::ResourceRecordSetId {
-		project: state.config.google_cloud.project_id.clone (),
-		zone: state.config.dynamic_dns.cloud_zone.clone (),
-		name: arcstr::format! ("{}.", state.config.dynamic_dns.domain),
-		type_: arcstr::literal! ("A"),
-	};
-	log::debug! ("Checking for existing record");
-	if let Some (mut rrset) = rrset_id.get (& state).await ? {
-		if rrset.ttl != 60 || rrset.rrdatas != & [ arcstr::format! ("{wan_addr}") ] {
-			log::debug! ("Updating existing record");
-			rrset.ttl = 60;
-			rrset.rrdatas = vec! [ arcstr::format! ("{wan_addr}") ];
-			rrset.update (& state).await ?;
-			log::info! ("DNS record updated to {wan_addr}");
-		}
-	} else {
-		log::debug! ("Creating new record");
-		let rrset = dns::ResourceRecordSet {
-			id: rrset_id,
-			ttl: 60,
-			rrdatas: vec! [ arcstr::format! ("{wan_addr}") ],
+	for domain_config in & state.config.dynamic_dns.domains {
+		let rrset_id = dns::ResourceRecordSetId {
+			project: state.config.google_cloud.project_id.clone (),
+			zone: domain_config.cloud_zone.clone (),
+			name: arcstr::format! ("{}.", domain_config.domain),
+			type_: arcstr::literal! ("A"),
 		};
-		rrset.create (& state).await ?;
-		log::info! ("DNS record created for {wan_addr}");
+		log::debug! ("Checking for existing record");
+		if let Some (mut rrset) = rrset_id.get (& state).await ? {
+			if rrset.ttl != 60 || rrset.rrdatas != & [ arcstr::format! ("{wan_addr}") ] {
+				log::debug! ("Updating existing record");
+				rrset.ttl = 60;
+				rrset.rrdatas = vec! [ arcstr::format! ("{wan_addr}") ];
+				rrset.update (& state).await ?;
+				log::info! ("DNS record updated to {wan_addr}");
+			}
+		} else {
+			log::debug! ("Creating new record");
+			let rrset = dns::ResourceRecordSet {
+				id: rrset_id,
+				ttl: 60,
+				rrdatas: vec! [ arcstr::format! ("{wan_addr}") ],
+			};
+			rrset.create (& state).await ?;
+			log::info! ("DNS record created for {wan_addr}");
+		}
 	}
 	Ok (())
 }

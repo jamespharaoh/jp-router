@@ -47,11 +47,17 @@ pub struct CoreConfig {
 #[ derive (Deserialize) ]
 #[ serde (deny_unknown_fields, rename_all = "kebab-case") ]
 pub struct DynamicDnsConfig {
-	pub cloud_zone: ArcStr,
-	pub domain: ArcStr,
+	pub domains: Vec <DynamicDnsDomainConfig>,
 	pub internal_domain: ArcStr,
 	pub enabled: bool,
 	pub interval_secs: u64,
+}
+
+#[ derive (Deserialize) ]
+#[ serde (deny_unknown_fields, rename_all = "kebab-case") ]
+pub struct DynamicDnsDomainConfig {
+	pub cloud_zone: ArcStr,
+	pub domain: ArcStr,
 }
 
 #[ derive (Deserialize) ]
